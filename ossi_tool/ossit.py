@@ -7,7 +7,7 @@ import argparse
 import csv
 import re
 
-__version__ = "0.3.3.6"
+__version__ = "0.3.3.7"
 
 """
 Handle imput paramaters
@@ -22,7 +22,7 @@ parser.add_argument("-p", "--password", help="Password for host")
 parser.add_argument("-i", "--inputfile", help="Input file name (CSV)")
 parser.add_argument("-o", "--outputfile", help="Output file name")
 parser.add_argument("-n", "--no_echo", help="Trun Off the command repetition in console and output file."
-                            , action='count')
+                    , action='count')
 parser.add_argument("-v", "--debug", help="Trun ON the debug logging of OSSI terminal. \
                     Debugis loggeg into the debug.log", action='count')
 # Planned feature
@@ -33,7 +33,7 @@ parser.add_argument("-t", "--prompt_timeout", help="Finetuning timeout for promp
                      Be careful!\
                      Too low number can lead to wrong behavior and script crash. \
                      Test every command to get proper number, and do not mix commands in\
-                     input file with that option.")                     
+                     input file with that option.")
 # parser.add_argument("-f", "--fieldID", help="FieldID /what you want t change/")
 # parser.add_argument("-d", "--data", help="data for change command")
 args = parser.parse_args()
@@ -87,38 +87,40 @@ class Ossi(object):
             if self.debug is not None:
                 self.s.logfile = open("debug.log", "wb")
             try:
-                self.s.login(self.host, self.username, self.password, terminal_type='vt100', original_prompt='[#$>t\]]', password_regex='(?i)(?:password:)')
+                self.s.login(self.host, self.username, self.password, terminal_type='vt100', original_prompt='[#$>t\]]',
+                             password_regex='(?i)(?:password:)')
                 self.s.timeout = 5
                 if self.no_echo is None:
-                    print "--- Connection established ---"
-                self.s.sendline('sat')   # run a command
+                    print("--- Connection established ---")
+                self.s.sendline('sat')  # run a command
                 try:
-                    self.s.expect('Terminal Type.*')             # match the prompts
+                    self.s.expect('Terminal Type.*')  # match the prompts
                     self.s.sendline('ossit')
                     try:
-                        self.s.expect('t')             # match the prompt
+                        self.s.expect('t')  # match the prompt
                         if self.no_echo is None:
-                            print "--- Ossi is logged in and ready ---"
+                            print("--- Ossi is logged in and ready ---")
                         self.ossi_alive = self.s.isalive()
                     except Exception as identifier:
-                        print 'Did not recognized ossi terminal prompt'
+                        print('Did not recognized ossi terminal prompt')
                         self.ossi_alive = False
                 except Exception as identifier:
-                    print 'Did not recognized prompt for Terminal Type'
+                    print('Did not recognized prompt for Terminal Type')
                     self.ossi_alive = False
-                 
+
             except Exception as identifier:
-                print 'Login failed', self.s.before
+                print('Login failed', self.s.before)
                 self.ossi_alive = False
-            
-            
-            
-                    
-            
-            
-        except pxssh.ExceptionPxssh as self.e:
+
+
+
+
+
+
+        except pxssh.ExceptionPxssh as xxx_todo_changeme:
+            self.e = xxx_todo_changeme
             print("pxssh failed on login.")
-            print(self.e)
+            print((self.e))
 
     def ossi_close(self):
         """
@@ -137,15 +139,16 @@ class Ossi(object):
             # print(s.before)
             self.s.logout()
             if self.no_echo is None:
-                print '--- Ossi logged out ---'
+                print('--- Ossi logged out ---')
             if self.cmd_error is not 0:
-                print '*** {0} commands are failed ***'.format(self.cmd_error)
+                print('*** {0} commands are failed ***'.format(self.cmd_error))
                 for self.key in self.failed_cmd:
-                    print '{0} --- {1}'.format(self.key, self.failed_cmd[self.key])
-                print'*** End of Errors ***'
-        except pxssh.ExceptionPxssh as self.e:
+                    print('{0} --- {1}'.format(self.key, self.failed_cmd[self.key]))
+                print('*** End of Errors ***')
+        except pxssh.ExceptionPxssh as xxx_todo_changeme1:
+            self.e = xxx_todo_changeme1
             print("pxssh failed on logoff.")
-            print(self.e)
+            print((self.e))
 
     def cmd_parser(self, inputfile):
         """
@@ -153,37 +156,35 @@ class Ossi(object):
 
         Each line is an ossi command, so it reads line by line, and concatenate with withspace.
         """
-        
+
         self.inputfile = inputfile
         if self.inputfile is not None:
             try:
                 self.info = csv.reader(open(self.inputfile))
                 if self.no_echo is None:
-                    print ' -- {0} is opened --'.format(self.inputfile)
+                    print(' -- {0} is opened --'.format(self.inputfile))
             except:
-                print ("Failed to open: ", self.inputfile)
+                print(("Failed to open: ", self.inputfile))
             else:
                 for self.row in self.info:
                     # self.row_cmd = ' '.join(self.row)
                     self.cmd = ' '.join(self.row)
                     if len(self.cmd.translate(None, ' \n\t\r')) > 0:
                         if self.no_echo is None:
-                            print '-------- \n\r{0}\n\r--------'.format(self.cmd)
+                            print('-------- \n\r{0}\n\r--------'.format(self.cmd))
                             self.output_writer('-------- \n{0}\n--------\n'.format(self.cmd))
-                            
+
                         self.ossi_cmd(self.cmd)
 
-
     def ossi_prompt(self):
-        
+
         try:
             i = self.s.expect(['\rmore..y.'], timeout=self.timeout)
             return True
         except Exception as e:
-            #print (e)
+            # print (e)
             return False
-                  
-       
+
     def ossi_cmd(self, command):
         """
         Send 'command' to ossi terminal, and read the output.
@@ -196,25 +197,24 @@ class Ossi(object):
             self.cmd_raw_result = ""
             self.cmd_result = ""
             self.failed_cmd = {}
-            self.s.sendline('c'+self.command)
+            self.s.sendline('c' + self.command)
             self.s.sendline('t')
             self.index = 0
 
             if self.ossi_prompt():
-                
+
                 while self.index == 0:
-    
-                    self.cmd_raw_result += self.s.before
+
+                    self.cmd_raw_result += self.s.before.decode('utf-8')
                     self.s.sendline('y')
-                        
 
                     if self.ossi_prompt():
                         pass
                     else:
                         self.index = self.s.expect(['####fake', '\rd\r\n\rt\r\n\r', '\rd*t\r\n\r'])
-                        self.cmd_raw_result += self.s.before
-           
-                
+                        self.cmd_raw_result += self.s.before.decode('utf-8')
+
+
 
             else:
                 try:
@@ -222,27 +222,22 @@ class Ossi(object):
 
                     if self.index == 1:
                         if self.no_echo is None:
-                            print '-- Command Error --'
+                            print('-- Command Error --')
                         self.cmd_error += 1
                         self.failed_cmd[str(self.command)] = self.s.after
                     elif self.index == 2:
-                        self.cmd_raw_result += self.s.after
+                        self.cmd_raw_result += self.s.after.decode('utf-8')
                 except:
                     if self.s.expect(['\rt\r\n\r']):
                         self.index = 3
-            
+
             if self.index != 3:
-                #Call command output parser
+                # Call command output parser
                 self.cmd_result = self.data_parse(self.cmd_raw_result)
                 self.output_writer(self.cmd_result)
                 self.output_writer('\n\n')
-              
+
                 # print '---- last data ---'
-
-                
-            
-                     
-
 
     def data_parse(self, data):
         """
@@ -254,25 +249,25 @@ class Ossi(object):
         self.page_data = ""
         self.fields = 0
         self.new_record = True
-        
+
         self.lines = self.data.split('\n')
 
         for self.line in self.lines:
             self.line = self.line.lstrip().rstrip()
             if re.match('^f', self.line):
                 self.fields = self.line.count('\t') + 1
-                
+
             elif re.match('^e', self.line):
                 self.result = self.line.lstrip('e')
                 self.page_data += self.result
-                
+
 
             elif re.match('^d', self.line):
                 self.result = self.line.lstrip('d')
                 if len(self.result) is not 0:
                     if len(self.page_data) > 0:
                         if self.new_record is False:
-                            self.page_data +=  ','
+                            self.page_data += ','
                         self.page_data += re.sub('\t', ',', self.result)
                         self.new_record = False
                     else:
@@ -281,19 +276,14 @@ class Ossi(object):
             elif re.match('^n', self.line):
                 self.page_data += "\n"
                 self.new_record = True
-            
-  
-            
-            
 
         # print '*** page data ***'
         # print ''.join(page_data)
-        print self.page_data
+        print(self.page_data)
         if args.command is None:
-            print ('\n')
+            print('\n')
         return self.page_data
 
-    
     def output_writer(self, output):
         """
         Write 'output' object into the outputfile.
@@ -308,7 +298,7 @@ class Ossi(object):
                 with open(self.outputfile, 'a+') as self.f:
                     self.f.write(self.output)
             except:
-                print ("Failed to open: ", self.outputfile)
+                print(("Failed to open: ", self.outputfile))
 
 
 def main():
@@ -318,7 +308,7 @@ def main():
     Bring things together.
     """
     if args.no_echo is None:
-        print '--- Let Start! ---'
+        print('--- Let Start! ---')
     a = Ossi()
     if args.password is not None:
         password = args.password
@@ -331,15 +321,15 @@ def main():
     if a.ossi_alive is True:
         if args.inputfile is not None and args.command is None:
             a.cmd_parser(args.inputfile)
-            
+
         elif args.inputfile is None and args.command is not None:
             if args.no_echo is None:
-                print '-------- \n\r{0}\n\r--------'.format(args.command)
+                print('-------- \n\r{0}\n\r--------'.format(args.command))
             a.output_writer('-------- \n{0}\n--------\n'.format(args.command))
             a.ossi_cmd(args.command)
-            
+
         else:
             print('There is neither an input csv file neither a command to execute')
     a.ossi_close()
     if args.no_echo is None:
-        print '--- Script running is finished ---'
+        print('--- Script running is finished ---')
